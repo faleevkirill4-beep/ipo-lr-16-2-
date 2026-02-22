@@ -1,0 +1,27 @@
+{% extends 'shop/base.html' %}
+
+{% block title %}Об авторе{% endblock %}
+
+{% block content %}
+    <h1>Об авторе проекта</h1>
+    
+    <p><strong>Данная лабораторная работа выполнена:</strong></p>
+    
+    <ul>
+        <li><strong>Студент:</strong> {{student_name}}</li>
+        <li><strong>Группа:</strong> {{group}}</li>
+        <li><strong>Дата выполнения:</strong> {{year}}</li>
+        <li><strong>Дисциплина:</strong> Интернет-программирование</li>
+    </ul>
+    
+    <h2>О проекте</h2>
+    <p>Данный проект создан в рамках изучения фреймворка Django. Представляет собой базовое веб-приложение для магазина настольных игр.</p>
+    
+    <h2>Используемые технологии</h2>
+    <ul>
+        <li>Python 3.x</li>
+        <li>Django 6.x</li>
+        <li>HTML5 / CSS3</li>
+        <li>SQLite</li>
+    </ul>
+{% endblock %}
