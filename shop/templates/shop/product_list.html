@@ -1,9 +1,8 @@
+
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Магазин настольных игр{% endblock %}</title>
+    <title>Наши товары</title>
     <style>
         * {
             margin: 0;
@@ -80,7 +79,7 @@
             <a href="/">🏠 Главная</a>
             <a href="/about/">👤 Об авторе</a>
             <a href="/shop_info/">🎲 О магазине</a>
-            <a href = "/products/"> Товары </a>
+            <a href = "/products/">Товары </a>
             <a href ="/bascet/"> Корзина</a>
        </nav>
         
@@ -89,9 +88,42 @@
             {% endblock %}
         </div>
         
-        <footer>
+       
+    </div>
+</head>
+<body>
+    <h1>Каталог товаров</h1>
+   
+    <div class="products">
+        {% for product in products %}  <!-- Цикл по всем товарам -->
+            <div class="product-card">
+                <h2>{{ product.name }}</h2>
+                <p>{{ product.description|truncatewords:20 }}</p>  <!-- Обрезаем описание -->
+                <p class="price">{{ product.price }} руб.</p>
+                <p>В наличии: {{ product.quantity }} шт.</p>
+                <button>В корзину</button>
+            </div>
+        {% empty %}  <!-- Если товаров нет -->
+            <p>Товары временно отсутствуют</p>
+        {% endfor %}
+    </div>
+    
+    <!-- Пагинация для ListView -->
+    {% if is_paginated %}
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}">← Назад</a>
+            {% endif %}
+            
+            <span>Страница {{ page_obj.number }} из {{ paginator.num_pages }}</span>
+            
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">Вперед →</a>
+            {% endif %}
+        </div>
+    {% endif %} 
+     <footer>
             <p>&copy; 2024 Магазин настольных игр. Все права защищены.</p>
         </footer>
-    </div>
 </body>
 </html>

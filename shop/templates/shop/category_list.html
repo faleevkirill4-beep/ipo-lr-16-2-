@@ -1,10 +1,9 @@
+
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Магазин настольных игр{% endblock %}</title>
-    <style>
+    <title>{{ title }}</title>
+   <style>
         * {
             margin: 0;
             padding: 0;
@@ -80,7 +79,7 @@
             <a href="/">🏠 Главная</a>
             <a href="/about/">👤 Об авторе</a>
             <a href="/shop_info/">🎲 О магазине</a>
-            <a href = "/products/"> Товары </a>
+            <a href = "/products/">Товары </a>
             <a href ="/bascet/"> Корзина</a>
        </nav>
         
@@ -89,9 +88,38 @@
             {% endblock %}
         </div>
         
-        <footer>
+      
+    </div>
+</head>
+<body>
+    <h1>{{ title }}</h1>
+    
+    {% if categories %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Название категории</th>
+                    <th>Описание</th>
+                    <th>Количество товаров</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for category in categories %}
+                <tr>
+                    <td>{{ category.id }}</td>
+                    <td>{{ category.name }}</td>
+                    <td>{{ category.description|default:"-" }}</td>
+                    <td>{{ category.products.count }} шт.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Категории не найдены.</p>
+    {% endif %}
+      <footer>
             <p>&copy; 2024 Магазин настольных игр. Все права защищены.</p>
         </footer>
-    </div>
 </body>
 </html>

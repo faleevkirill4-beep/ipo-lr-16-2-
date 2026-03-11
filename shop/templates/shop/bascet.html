@@ -1,0 +1,47 @@
+{% extends 'shop/base.html' %}
+
+{% block content %}
+<div class="basket-container">
+    <h1>Корзина</h1>
+    
+    {% if not is_authenticated %}
+        <div class="alert alert-warning">
+
+        </div>
+    {% elif elements %}
+        <table class="basket-table">
+            <thead>
+                <tr>
+                    <th>Товар</th>
+                    <th>Цена</th>
+                    <th>Количество</th>
+                    <th>Сумма</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for element in elements %}
+                <tr>
+                    <td>{{ element.product.name }}</td>
+                    <td>{{ element.product.price }} ₽</td>
+                    <td>{{ element.count }}</td>
+                    <td>{{ element.Price_element }} ₽</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3"><strong>Итого:</strong></td>
+                    <td><strong>{{ total_coast }} ₽</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+        
+        <div class="basket-actions">
+            <a href="{% url 'product_list' %}">Продолжить покупки</a>
+        </div>
+    {% else %}
+        <p>Ваша корзина пуста</p>
+        <a href="{% url 'product_list' %}">Перейти к товарам</a>
+    {% endif %}
+</div>
+{% endblock %}
