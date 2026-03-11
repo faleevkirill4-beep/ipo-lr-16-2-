@@ -31,8 +31,7 @@
   - `urls.py` - маршрутизация
 
 - `templates/` - HTML шаблоны (будут добавлены позже)
-- контрольные вопросы:
-- Вот краткие ответы на все вопросы:
+- контрольные вопросы(лр 17):
 
 1. **Поля модели "Товар"**: name (CharField), description (TextField), price (DecimalField), category (ForeignKey), manufacturer (ForeignKey), image (ImageField), created_at (DateTimeField)
 
@@ -91,3 +90,4 @@
 28. **Суммированием цены каждого элемента**
 
 29. **Удаляются автоматически** из-за CASCADE
+
