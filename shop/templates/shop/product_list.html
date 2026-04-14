@@ -1,129 +1,36 @@
-
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Наши товары</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Arial', sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f4f4f4;
-        }
-        
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        nav {
-            background-color: #2c3e50;
-            padding: 1rem;
-            margin-bottom: 2rem;
-            border-radius: 5px;
-        }
-        
-        nav a {
-            color: white;
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            margin-right: 1rem;
-            border-radius: 3px;
-            transition: background-color 0.3s;
-        }
-        
-        nav a:hover {
-            background-color: #34495e;
-        }
-        
-        .content {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 1rem;
-        }
-        
-        p {
-            margin-bottom: 1rem;
-        }
-        
-        ul {
-            margin-left: 2rem;
-            margin-bottom: 1rem;
-        }
-        
-        footer {
-            text-align: center;
-            margin-top: 2rem;
-            padding: 1rem;
-            color: #7f8c8d;
-        }
-    </style>
-    {% block extra_css %}{% endblock %}
-</head>
-<body>
-    <div class="container">
-        <nav>
-            <a href="/">🏠 Главная</a>
-            <a href="/about/">👤 Об авторе</a>
-            <a href="/shop_info/">🎲 О магазине</a>
-            <a href = "/products/">Товары </a>
-            <a href ="/bascet/"> Корзина</a>
-       </nav>
-        
-        <div class="content">
-            {% block content %}
-            {% endblock %}
-        </div>
-        
-       
-    </div>
-</head>
-<body>
-    <h1>Каталог товаров</h1>
-   
-    <div class="products">
-        {% for product in products %}  <!-- Цикл по всем товарам -->
-            <div class="product-card">
-                <h2>{{ product.name }}</h2>
-                <p>{{ product.description|truncatewords:20 }}</p>  <!-- Обрезаем описание -->
-                <p class="price">{{ product.price }} руб.</p>
-                <p>В наличии: {{ product.quantity }} шт.</p>
-                <button>В корзину</button>
-            </div>
-        {% empty %}  <!-- Если товаров нет -->
-            <p>Товары временно отсутствуют</p>
-        {% endfor %}
-    </div>
+{% extends 'shop/base.html' %}
+    {% block content %}
+        <h1>Каталог товаров</h1>
     
-    <!-- Пагинация для ListView -->
-    {% if is_paginated %}
-        <div class="pagination">
-            {% if page_obj.has_previous %}
-                <a href="?page={{ page_obj.previous_page_number }}">← Назад</a>
-            {% endif %}
-            
-            <span>Страница {{ page_obj.number }} из {{ paginator.num_pages }}</span>
-            
-            {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}">Вперед →</a>
-            {% endif %}
+        <div class="products">
+            {% for product in products %}  <!-- Цикл по всем товарам -->
+                <div class="product-card">
+                    <h2>{{ product.name }}</h2>
+                    <p>{{ product.description|truncatewords:20 }}</p>  <!-- Обрезаем описание -->
+                    <p class="price">{{ product.price }} руб.</p>
+                    <p>В наличии: {{ product.count }} шт.</p>
+                    <button>В корзину</button>
+                </div>
+            {% empty %}  <!-- Если товаров нет -->
+                <p>Товары временно отсутствуют</p>
+            {% endfor %}
         </div>
-    {% endif %} 
-     <footer>
-            <p>&copy; 2024 Магазин настольных игр. Все права защищены.</p>
-        </footer>
-</body>
-</html>
+        
+        <!-- Пагинация для ListView -->
+        {% if is_paginated %}
+            <div class="pagination">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}">← Назад</a>
+                {% endif %}
+                
+                <span>Страница {{ page_obj.number }} из {{ paginator.num_pages }}</span>
+                
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}">Вперед →</a>
+                {% endif %}
+            </div>
+        {% endif %} 
+        <footer>
+                <p>&copy; 2024 Магазин настольных игр. Все права защищены.</p>
+            </footer>
+    {% endblock %}

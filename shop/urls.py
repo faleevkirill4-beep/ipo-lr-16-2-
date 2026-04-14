@@ -7,7 +7,9 @@ urlpatterns = [
     path('shop_info/', views.shop_info, name='shop_info'),
 
     #для функций представлений
-    path('products/',views.product_list,name='product_list'),
+    path('catalog/',views.product_list,name='product_list'),
     path('categories/',views.category_list,name='category_list'),
-    path('bascet/',views.bascet,name='bascet'),
+    path('basket/',views.basket,name='basket'),
+    path('product/<int:pk>/', views.product_detail, name ='product_detail'),
+
 ]

@@ -1,5 +1,5 @@
 from django.db import models
-from django.core.validators import MinLengthValidator
+from django.core.validators import MinValueValidator
 from django.contrib.auth.models import User
 # Create your models here.
 
@@ -44,12 +44,12 @@ class Product(models.Model):
         max_digits=10,
         decimal_places=2,
         validators=[
-            MinLengthValidator(0)
+            MinValueValidator(0)
         ]
     )
     count = models.IntegerField(
         validators=[
-            MinLengthValidator(0)
+            MinValueValidator(0)
         ]
     )
     category = models.ForeignKey(
@@ -73,36 +73,30 @@ class Product(models.Model):
         return self.name
  
 
-class Bascet(models.Model):
+class Basket(models.Model):
     user = models.OneToOneField(
         User,
         on_delete = models.CASCADE,
-        related_name='bascet',
+        related_name='basket',
         verbose_name="Пользователь",
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Корзина пользователя {self.user.username}"
-    #сделать метод для высчитывания общей стоймости всех элементов корзины
-    """ def total_coast(self):
-        price_elem = 0.0
-        for elem in self.elements.all():
-            price_elem+=elem.Price_element()
-        return price_elem
-    """
-class Element_bascet(models.Model):
-    bascet = models.ForeignKey(
-        Bascet,
+       
+class BasketItem(models.Model):
+    basket = models.ForeignKey(
+        Basket,
         on_delete=models.CASCADE,
-        related_name ='elements',
+        related_name ='items',
     )
     product = models.ForeignKey(
         Product,
         on_delete=models.CASCADE,
-        related_name ='in_bascet',
+        related_name ='in_basket',
     )
-    count = models.PositiveIntegerField()
+    count = models.PositiveIntegerField(default=1)
     
 
     def __str__(self):
