@@ -71,6 +71,34 @@
             padding: 1rem;
             color: #7f8c8d;
         }
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 40px;  /* Увеличенное расстояние между карточками */
+            padding: 40px;
+            margin: 0 auto;
+            max-width: 1400px;
+        }
+
+/* Карточка товара */
+        .product-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);  /* Более заметная тень */
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(0px);
+        }
+
+        .product-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);  /* Усиленная тень при наведении */
+        }
+
+
     </style>
     {% block extra_css %}{% endblock %}
 </head>

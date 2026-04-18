@@ -1,36 +1,23 @@
 {% extends 'shop/base.html' %}
-    {% block content %}
-        <h1>Каталог товаров</h1>
+
+{% block content %}
+    <h1>Каталог товаров</h1>
     
-        <div class="products">
-            {% for product in products %}  <!-- Цикл по всем товарам -->
+    
+    
+    {% if products %}
+        <div class="container">
+            {% for product in products %}
                 <div class="product-card">
                     <h2>{{ product.name }}</h2>
-                    <p>{{ product.description|truncatewords:20 }}</p>  <!-- Обрезаем описание -->
                     <p class="price">{{ product.price }} руб.</p>
                     <p>В наличии: {{ product.count }} шт.</p>
-                    <button>В корзину</button>
                 </div>
-            {% empty %}  <!-- Если товаров нет -->
-                <p>Товары временно отсутствуют</p>
             {% endfor %}
         </div>
-        
-        <!-- Пагинация для ListView -->
-        {% if is_paginated %}
-            <div class="pagination">
-                {% if page_obj.has_previous %}
-                    <a href="?page={{ page_obj.previous_page_number }}">← Назад</a>
-                {% endif %}
-                
-                <span>Страница {{ page_obj.number }} из {{ paginator.num_pages }}</span>
-                
-                {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}">Вперед →</a>
-                {% endif %}
-            </div>
-        {% endif %} 
-        <footer>
-                <p>&copy; 2024 Магазин настольных игр. Все права защищены.</p>
-            </footer>
-    {% endblock %}
+    {% else %}
+        <p style="color: red; font-size: 20px;">
+            ❌ Товары временно отсутствуют в базе данных!
+        </p>
+    {% endif %}
+{% endblock %}
