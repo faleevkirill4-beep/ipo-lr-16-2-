@@ -41,8 +41,12 @@
         </div>
     {% else %}
         <p>Ваша корзина пуста</p>
-        <a href="{% url 'product_list' %}">Перейти к товарам</a>
-    {% endif %}
+       <form action="{% url 'product_list' %}" method="get">
+            <button type="submit" style="padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">
+        Перейти к товарам
+            </button>
+        </form>
+        {% endif %}
 </div>
 
 {% for item in cart_items %}
