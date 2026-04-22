@@ -12,26 +12,26 @@
         <table class="basket-table">
             <thead>
                 <tr>
-                    <th>Товар</th>
-                    <th>Цена</th>
-                    <th>Количество</th>
-                    <th>Сумма</th>
+                    <th align ="center">Товар</th>
+                    <th align ="center">Цена</th>
+                    <th align ="center">Количество</th>
+                    <th align ="center">Сумма</th>
                 </tr>
             </thead>
             <tbody>
                 {% for element in elements %}
                 <tr>
-                    <td>{{ element.product.name }}</td>
-                    <td>{{ element.product.price }} ₽</td>
-                    <td>{{ element.count }}</td>
-                    <td>{{ element.Price_element }} ₽</td>
+                    <td align ="center">{{ element.product.name }}</td>
+                    <td align ="center">{{ element.product.price }} BYN</td>
+                    <td align ="center">{{ element.count }}</td>
+                    <td align ="center">{{ element.price_element }} BYN</td>
                 </tr>
                 {% endfor %}
             </tbody>
             <tfoot>
                 <tr>
                     <td colspan="3"><strong>Итого:</strong></td>
-                    <td><strong>{{ total_coast }} ₽</strong></td>
+                    <td><strong>{{ total_cost }} BYN</strong></td>
                 </tr>
             </tfoot>
         </table>
@@ -44,4 +44,42 @@
         <a href="{% url 'product_list' %}">Перейти к товарам</a>
     {% endif %}
 </div>
+
+{% for item in cart_items %}
+<form method="post" action="{% url 'update_basket_quantity' item.product.id %}">
+    {% csrf_token %}
+    <input type="number" 
+           name="quantity" 
+           value="{{ item.quantity }}" 
+           min="0" 
+           max="{{ item.product.count }}"
+           step="1">
+    <button type="submit">Обновить</button>
+</form>
+{% endfor %}
+        <!-- удаление товара -->
+
+{% for element in elements %}
+<tr>
+    <td>{{ element.product.name }}</td>
+    <td>{{ element.product.price }} BYN</td>
+    <td>{{ element.count }} шт</td>
+    <td>{{ element.price_element }} BYN</td>
+
+    
+    <td>
+        <form action="{% url 'remove_from_basket' element.id %}" 
+              method="post" 
+              onsubmit="return confirm('Удалить товар {{ element.product.name }} из корзины?')">
+            {% csrf_token %}
+            <button type="submit" class="btn-remove">
+                🗑️ Удалить
+            </button>
+        </form>
+        
+      
+    </td>
+</tr>
+{% endfor %}
+
 {% endblock %}

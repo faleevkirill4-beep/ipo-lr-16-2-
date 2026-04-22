@@ -85,6 +85,14 @@ class Basket(models.Model):
     def __str__(self):
         return f"Корзина пользователя {self.user.username}"
        
+    def total_cost(self):
+        total = 0
+        for item in self.items.all():
+            total+=item.Price_element()
+        return total
+
+
+
 class BasketItem(models.Model):
     basket = models.ForeignKey(
         Basket,
@@ -102,8 +110,8 @@ class BasketItem(models.Model):
     def __str__(self):
         return f"{self.product.name} - {self.count} шт."
     
-    def Price_element(self):
+    def price_element(self):
         return self.product.price * self.count
         
-    
-
+   
+        

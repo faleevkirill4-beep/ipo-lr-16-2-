@@ -2,7 +2,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Product,Manufacturer,BasketItem,Basket,Category
 from django.contrib.auth.decorators import login_required
-from django.db.models import Sum,F
+from django.db.models import Sum,F,Q
 from django.contrib import messages
 
 
@@ -27,6 +27,21 @@ def shop_info(request):
 # --------------Модели---------------
 def product_list(request):
     products = Product.objects.all()
+
+#фильтрация  
+    category_id = request.GET.get('category')
+    search_query = request.GET.get('search','').strip()
+
+#поиск по категории 
+    if category_id:
+        products = products.filter(category_id = category_id)
+#Поиск по названию и описанию продукта
+    if search_query:
+        products = products.filter(
+            Q(name__icontains = search_query)|
+            Q(description__icontains = search_query)
+        )
+    
     return render(request, 'shop/product_list.html', {'products': products})
 
 def category_list(request):
@@ -90,59 +105,41 @@ def add(request, product_id):
             item.save()
     
     messages.success(request, f'Товар "{product.name}" добавлен в корзину')
-    return redirect('shop:product_list')
+    return redirect('product_list')
 
-
-#--------------Просмотр корзины----------------
-def view_cart(request):
-    
-    cart = request.session.get('cart', {})
-    
-    # Рассчитываем итоговую сумму
-    total_price = sum(item['price'] * item['quantity'] for item in cart.values())
-    total_items = sum(item['quantity'] for item in cart.values())
-    
-    context = {
-        'cart_items': cart.items(),
-        'total_price': total_price,
-        'total_items': total_items,
-    }
-    return render(request, 'shop/cart.html', context)
 
 
 #-------------удаление товара из корзины-----------------
-def remove_from_cart(request, product_id):
-   
-    cart = request.session.get('cart', {})
-    
-    product_id_str = str(product_id)
-    
-    if product_id_str in cart:
-        product_name = cart[product_id_str]['name']
-        del cart[product_id_str]
-        request.session['cart'] = cart
-        messages.success(request, f'Товар "{product_name}" удален из корзины')
-    
-    return redirect('cart')
-
-
-#--------------Обновление количества товара----------------
-def update_cart_quantity(request, product_id):
+@login_required
+def remove_from_basket(request, item_id):
+    item = get_object_or_404(BasketItem, id=item_id, basket__user=request.user)
+    product_name = item.product.name
+    item.delete()
+    messages.success(request, f'Товар "{product_name}" удален из корзины')
+    return redirect('basket')
+#---------------Обновление количества товара в корзине---------------
+@login_required
+def update_basket_quantity(request, item_id):
     
     if request.method == 'POST':
-        quantity = int(request.POST.get('quantity', 1))
-        cart = request.session.get('cart', {})
-        product_id_str = str(product_id)
+        try:
+            quantity = int(request.POST.get('quantity', 1))
+        except (TypeError, ValueError):
+            messages.error(request, 'Укажите корректное количество')
+            return redirect('basket')
         
-        if product_id_str in cart:
-            if quantity > 0:
-                cart[product_id_str]['quantity'] = quantity
-                messages.success(request, 'Количество обновлено')
-            else:
-                del cart[product_id_str]
-                messages.success(request, 'Товар удален из корзины')
-            
-            request.session['cart'] = cart
+        item = get_object_or_404(BasketItem, id=item_id, basket__user=request.user)
+        
+        if quantity <= 0:
+            item.delete()
+            messages.success(request, f'Товар "{item.product.name}" удален')
+        elif quantity > item.product.count:
+            messages.error(request, f'Доступно только {item.product.count} шт.')
+        else:
+            item.count = quantity
+            item.save()
+            messages.success(request, f'Количество обновлено')
+        
+        return redirect('basket')
     
-    return redirect('cart')
-
+    return redirect('basket')
