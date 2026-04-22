@@ -4,8 +4,9 @@ from .models import Product,Manufacturer,BasketItem,Basket,Category
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum,F,Q
 from django.contrib import messages
-
-
+from .utils import create_excel_receipt
+from django.core.mail import EmailMessage
+from my_shop import settings
 # --------------страницы---------------
 def index(request):
     "Главная страница с ссылками"
@@ -143,3 +144,54 @@ def update_basket_quantity(request, item_id):
         return redirect('basket')
     
     return redirect('basket')
+
+
+
+#-----------оформление заказа------------
+@login_required
+def checkout(request):
+    """Оформление заказа"""
+    
+    if request.method == 'POST':
+        # Получаем корзину
+        basket = Basket.objects.filter(user_id=request.user.id).first()
+        
+        if basket:
+            items = BasketItem.objects.filter(basket_id=basket.id)
+            
+            # Считаем сумму
+            total = sum(item.product.price * item.count for item in items)
+            
+            # Текст письма
+            message = f"Спасибо за покупку, {request.user.username}!\n"
+            message += f"Телефон: {request.POST.get('phone')}\n"
+            message += f"Адрес: {request.POST.get('address')}\n"
+            message += "Ваши товары:\n"
+            
+            for item in items:
+                message += f"- {item.product.name} x {item.count} = {item.product.price * item.count} руб.\n"
+            
+            message += f"\nИтого: {total} руб.\nСпасибо!"
+            
+            # Отправляем
+            email = EmailMessage(
+                subject=f"Заказ от {request.user.username}",
+                body=message,
+                from_email=settings.EMAIL_HOST_USER,
+                to=[request.POST.get('email')]
+            )
+            excel_file = create_excel_receipt(user=request.user,items=items,total_price = total)
+            # excel_file - это BytesIO объект
+            email.attach('чек.xlsx', excel_file.getvalue(), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            email.send()
+            
+            # Очищаем корзину
+            items.delete()
+            basket.delete()
+            
+            messages.success(request, 'Заказ оформлен!')
+        
+        return redirect('product_list')
+    
+    return render(request, 'shop/checkout.html')
+            

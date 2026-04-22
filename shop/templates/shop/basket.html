@@ -49,7 +49,7 @@
         {% endif %}
 </div>
 
-{% for item in cart_items %}
+{% for item in basket_items %}
 <form method="post" action="{% url 'update_basket_quantity' item.product.id %}">
     {% csrf_token %}
     <input type="number" 
@@ -85,5 +85,4 @@
     </td>
 </tr>
 {% endfor %}
-
 {% endblock %}

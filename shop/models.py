@@ -73,6 +73,7 @@ class Product(models.Model):
         return self.name
  
 
+
 class Basket(models.Model):
     user = models.OneToOneField(
         User,
@@ -88,7 +89,7 @@ class Basket(models.Model):
     def total_cost(self):
         total = 0
         for item in self.items.all():
-            total+=item.Price_element()
+            total+=item.price_element()
         return total
 
 
@@ -114,4 +115,4 @@ class BasketItem(models.Model):
         return self.product.price * self.count
         
    
-        
+

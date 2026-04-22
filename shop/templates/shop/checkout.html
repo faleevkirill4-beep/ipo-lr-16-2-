@@ -1,0 +1,28 @@
+{% extends 'shop/base.html' %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 50px auto;">
+    <h2>Оформление заказа</h2>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <p>
+            <label>Email для чека:</label>
+            <input type="email" name="email" value="{{ request.user.email }}" required>
+        </p>
+        
+        <p>
+            <label>Телефон:</label>
+            <input type="tel" name="phone" required>
+        </p>
+        
+        <p>
+            <label>Адрес доставки:</label>
+            <textarea name="address" required></textarea>
+        </p>
+        
+        <button type="submit">Подтвердить заказ</button>
+    </form>
+</div>
+{% endblock %}
