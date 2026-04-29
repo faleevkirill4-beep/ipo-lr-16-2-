@@ -7,10 +7,30 @@ from django.contrib import messages
 from .utils import create_excel_receipt
 from django.core.mail import EmailMessage
 from my_shop import settings
+from .serializers import  ProductSerializer,CategorySerializer,ManufacturerSerializer,BasketSerializer,BasketItemSerializer
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
+from django.contrib.auth.forms import UserCreationForm
+from django.core.paginator import Paginator
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from rest_framework import status
+from datetime import datetime
+import uuid
+
 # --------------страницы---------------
 def index(request):
     "Главная страница с ссылками"
-    return render(request, 'shop/index.html')
+    popular_products = Product.objects.all().order_by('-id')[:6]
+
+    categories = Category.objects.all()
+
+    context = {
+        'popular_products':popular_products,
+        'categories':categories,
+    }
+
+    return render(request, 'shop/index.html',context)
 
 def about(request):
     context = {
@@ -27,23 +47,42 @@ def shop_info(request):
 
 # --------------Модели---------------
 def product_list(request):
-    products = Product.objects.all()
-
-#фильтрация  
-    category_id = request.GET.get('category')
-    search_query = request.GET.get('search','').strip()
-
-#поиск по категории 
-    if category_id:
-        products = products.filter(category_id = category_id)
-#Поиск по названию и описанию продукта
-    if search_query:
-        products = products.filter(
-            Q(name__icontains = search_query)|
-            Q(description__icontains = search_query)
-        )
+    """Страница каталога товаров с фильтрацией и пагинацией"""
     
-    return render(request, 'shop/product_list.html', {'products': products})
+    # Начинаем со всех товаров
+    products = Product.objects.all()
+    
+    # Фильтр по категории
+    category_id = request.GET.get('category')
+    if category_id:
+        products = products.filter(category_id=category_id)
+    
+    # Фильтр по производителю
+    manufacturer_id = request.GET.get('manufacturer')
+    if manufacturer_id:
+        products = products.filter(manufacturer_id=manufacturer_id)
+    
+    # Поиск по названию
+    search_query = request.GET.get('search')
+    if search_query:
+        products = products.filter(Q(name__icontains=search_query) | Q(description__icontains=search_query))
+    
+    # Пагинация (9 товаров на странице)
+    paginator = Paginator(products, 9)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Получаем все категории и производителей для фильтров
+    categories = Category.objects.all()
+    manufacturers = Manufacturer.objects.all()
+    
+    context = {
+        'products': page_obj.object_list,
+        'page_obj': page_obj,
+        'categories': categories,
+        'manufacturers': manufacturers,
+    }
+    return render(request, 'shop/product_list.html', context)
 
 def category_list(request):
     categories = Category.objects.all()
@@ -77,15 +116,20 @@ def basket(request):
 
 
 # --------------детали продукта--------------- 
-def product_detail(request,pk):
-    product = get_object_or_404(Product, pk = pk)
-
+def product_detail(request, pk):
+    """Детальная страница товара"""
+    product = get_object_or_404(Product, pk=pk)
+    
+    # Похожие товары (из той же категории, исключая текущий)
+    similar_products = Product.objects.filter(
+        category=product.category
+    ).exclude(id=product.id)[:4]
+    
     context = {
         'product': product,
-     
+        'similar_products': similar_products,
     }
-    return render(request,'shop/product_detail.html', context)
-
+    return render(request, 'shop/product_detail.html', context)
 
 
 #---------------добавление в корзину---------------
@@ -146,52 +190,256 @@ def update_basket_quantity(request, item_id):
     return redirect('basket')
 
 
-
-#-----------оформление заказа------------
 @login_required
 def checkout(request):
     """Оформление заказа"""
     
-    if request.method == 'POST':
-        # Получаем корзину
-        basket = Basket.objects.filter(user_id=request.user.id).first()
+    # GET запрос - показываем форму
+    if request.method == 'GET':
+        # Получаем корзину для отображения в форме
+        basket = Basket.objects.filter(user=request.user).first()
         
-        if basket:
-            items = BasketItem.objects.filter(basket_id=basket.id)
+        if not basket:
+            messages.warning(request, 'Ваша корзина пуста')
+            return redirect('basket')
+        
+        items = BasketItem.objects.filter(basket=basket)
+        
+        if not items:
+            messages.warning(request, 'Ваша корзина пуста')
+            return redirect('basket')
+        
+        # Считаем сумму
+        total = sum(item.product.price * item.count for item in items)
+        
+        context = {
+            'items': items,
+            'total': total,
+        }
+        return render(request, 'shop/checkout.html', context)
+    
+    # POST запрос - оформляем заказ
+    if request.method == 'POST':
+        # Получаем данные из формы
+        phone = request.POST.get('phone', '').strip()
+        address = request.POST.get('address', '').strip()
+        email = request.POST.get('email', '').strip()
+        comment = request.POST.get('comment', '').strip()
+        
+        # Проверяем заполнение обязательных полей
+        if not phone:
+            messages.error(request, 'Пожалуйста, укажите номер телефона')
+            return redirect('checkout')
+        
+        if not address:
+            messages.error(request, 'Пожалуйста, укажите адрес доставки')
+            return redirect('checkout')
+        
+        if not email:
+            messages.error(request, 'Пожалуйста, укажите email для получения чека')
+            return redirect('checkout')
+        
+        # Проверка формата email
+        if '@' not in email or '.' not in email:
+            messages.error(request, 'Пожалуйста, укажите корректный email адрес')
+            return redirect('checkout')
+        
+        # Получаем корзину
+        basket = Basket.objects.filter(user=request.user).first()
+        
+        if not basket:
+            messages.warning(request, 'Корзина пуста')
+            return redirect('basket')
+        
+        items = BasketItem.objects.filter(basket=basket)
+        
+        if not items:
+            messages.warning(request, 'Корзина пуста')
+            return redirect('basket')
+        
+        # Проверка наличия товаров на складе
+        for item in items:
+            if item.count > item.product.count:
+                messages.error(request, f'Товара "{item.product.name}" недостаточно на складе. Доступно: {item.product.count} шт.')
+                return redirect('basket')
+        
+        # Считаем сумму
+        total = sum(item.product.price * item.count for item in items)
+        
+        # Генерируем номер заказа
+        order_id = str(uuid.uuid4())[:8].upper()
+        
+        # Формируем текст письма
+        message = f"""
+Здравствуйте, {request.user.username}!
+
+Ваш заказ #{order_id} успешно оформлен!
+
+📋 ДЕТАЛИ ЗАКАЗА:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📞 Телефон: {phone}
+📍 Адрес доставки: {address}
+📧 Email: {email}
+💬 Комментарий: {comment if comment else 'Нет'}
+
+🛒 СОСТАВ ЗАКАЗА:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""
+        
+        for item in items:
+            item_total = item.product.price * item.count
+            message += f"• {item.product.name} x {item.count} шт. = {item_total:,.2f} руб.\n"
+        
+        message += f"""
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💰 ИТОГО К ОПЛАТЕ: {total:,.2f} руб.
+
+📅 Дата заказа: {datetime.now().strftime("%d.%m.%Y %H:%M")}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Чек в формате Excel прикреплен к этому письму.
+
+Спасибо за покупку!
+С уважением, команда магазина "Настольные игры".
+"""
+        
+        # Отправляем email
+        try:
+            # Создаем письмо
+            email_message = EmailMessage(
+                subject=f"✅ Подтверждение заказа #{order_id}",
+                body=message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[email],
+                reply_to=[settings.DEFAULT_FROM_EMAIL],
+            )
             
-            # Считаем сумму
-            total = sum(item.product.price * item.count for item in items)
+            # Делаем письмо в кодировке UTF-8
+            email_message.encoding = 'utf-8'
             
-            # Текст письма
-            message = f"Спасибо за покупку, {request.user.username}!\n"
-            message += f"Телефон: {request.POST.get('phone')}\n"
-            message += f"Адрес: {request.POST.get('address')}\n"
-            message += "Ваши товары:\n"
+            # Создаем и прикрепляем Excel чек
+            excel_file = create_excel_receipt(
+                user=request.user,
+                items=items,
+                total_price=total,
+                phone=phone,
+                address=address,
+                order_id=order_id
+            )
             
-            for item in items:
-                message += f"- {item.product.name} x {item.count} = {item.product.price * item.count} руб.\n"
-            
-            message += f"\nИтого: {total} руб.\nСпасибо!"
+            email_message.attach(
+                f'чек_заказ_{order_id}.xlsx', 
+                excel_file.getvalue(), 
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
             
             # Отправляем
-            email = EmailMessage(
-                subject=f"Заказ от {request.user.username}",
-                body=message,
-                from_email=settings.EMAIL_HOST_USER,
-                to=[request.POST.get('email')]
-            )
-            excel_file = create_excel_receipt(user=request.user,items=items,total_price = total)
-            # excel_file - это BytesIO объект
-            email.attach('чек.xlsx', excel_file.getvalue(), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-            email.send()
+            email_message.send()
             
-            # Очищаем корзину
-            items.delete()
-            basket.delete()
+            messages.success(request, f'✅ Заказ #{order_id} успешно оформлен! Чек отправлен на {email}')
             
-            messages.success(request, 'Заказ оформлен!')
+        except Exception as e:
+            messages.error(request, f'❌ Ошибка при оформлении заказа: {str(e)}')
+            return redirect('basket')
+        
+        # Уменьшаем количество товара на складе
+        for item in items:
+            product = item.product
+            product.count -= item.count
+            product.save()
+        
+        # Очищаем корзину
+        items.delete()
+        basket.delete()
         
         return redirect('product_list')
     
-    return render(request, 'shop/checkout.html')
-            
+    return redirect('basket')
+#регистрация 
+def register(request):
+    """Регистрация нового пользователя"""
+    
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Регистрация прошла успешно! Теперь вы можете войти.')
+            return redirect('login')
+    else:
+        form = UserCreationForm()
+    
+    return render(request, 'registration/register.html', {'form': form})
+
+
+#-------------API-------------------
+
+
+class ProductViewSet(viewsets.ModelViewSet):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    permission_classes = [IsAuthenticated]  # Только авторизованные
+
+class ManufacturerViewSet(viewsets.ModelViewSet):
+    queryset = Manufacturer.objects.all()
+    serializer_class = ManufacturerSerializer
+    permission_classes = [IsAuthenticated]  
+
+class CategoryViewSet(viewsets.ModelViewSet):
+    queryset = Manufacturer.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [IsAuthenticated]  
+
+class BasketViewSet(viewsets.ModelViewSet):
+    queryset = Basket.objects.all()
+    serializer_class = BasketSerializer
+    permission_classes = [IsAuthenticated]  
+class BasketItemViewSet(viewsets.ModelViewSet):
+    queryset = BasketItem.objects.all()
+    serializer_class = BasketItemSerializer
+    permission_classes = [IsAuthenticated]  
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_add_to_basket(request):
+    """API для добавления товара в корзину"""
+    product_id = request.data.get('product_id')
+    quantity = request.data.get('quantity', 1)
+    
+    if not product_id:
+        return Response({'error': 'product_id обязателен'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    product = get_object_or_404(Product, id=product_id)
+    basket, _ = Basket.objects.get_or_create(user=request.user)
+    
+    cart_item, created = BasketItem.objects.get_or_create(
+        basket=basket,
+        product=product,
+        defaults={'count': quantity}
+    )
+    
+    if not created:
+        if cart_item.count + quantity <= 99:
+            cart_item.count += quantity
+            cart_item.save()
+        else:
+            return Response({'error': 'Нельзя добавить больше 99 товаров'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # ВАРИАНТЫ РАБОТАЮЩЕГО КОДА:
+    
+    # Вариант 1: Стандартный
+    result = basket.items.aggregate(total=Sum('count'))
+    total_items = result['total'] if result['total'] is not None else 0
+    
+    # Вариант 2: Более короткий
+    # total_items = basket.items.aggregate(total=Sum('count')).get('total') or 0
+    
+    # Вариант 3: Без агрегации (циклом)
+    # total_items = 0
+    # for item in basket.items.all():
+    #     total_items += item.count
+    
+    return Response({
+        'message': f'Товар "{product.name}" добавлен в корзину',
+        'total_items': total_items
+    })

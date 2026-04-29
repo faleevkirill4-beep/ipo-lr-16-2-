@@ -4,13 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Магазин настольных игр{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <!-- Основные стили -->
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
         body {
             font-family: 'Arial', sans-serif;
             line-height: 1.6;
@@ -18,112 +20,235 @@
             background-color: #f4f4f4;
         }
         
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 20px;
+        /* Стили для navbar */
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
         }
         
-        nav {
-            background-color: #2c3e50;
-            padding: 1rem;
-            margin-bottom: 2rem;
-            border-radius: 5px;
+        .navbar-brand i {
+            margin-right: 10px;
         }
         
-        nav a {
-            color: white;
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            margin-right: 1rem;
-            border-radius: 3px;
-            transition: background-color 0.3s;
-        }
-        
-        nav a:hover {
-            background-color: #34495e;
-        }
-        
-        .content {
+        /* Основной контент */
+        .main-content {
+            min-height: 500px;
             background-color: white;
             padding: 2rem;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin: 20px 0;
         }
         
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 1rem;
+        /* Футер */
+        .footer {
+            background-color: #2c3e50;
+            color: white;
+            padding: 40px 0 20px;
+            margin-top: 40px;
+            border-radius: 10px 10px 0 0;
         }
         
-        p {
-            margin-bottom: 1rem;
+        .footer h5 {
+            color: #ecf0f1;
+            margin-bottom: 20px;
         }
         
-        ul {
-            margin-left: 2rem;
-            margin-bottom: 1rem;
+        .footer a {
+            color: #bdc3c7;
+            text-decoration: none;
         }
         
-        footer {
+        .footer a:hover {
+            color: white;
+        }
+        
+        .footer-bottom {
             text-align: center;
-            margin-top: 2rem;
-            padding: 1rem;
+            padding-top: 20px;
+            margin-top: 20px;
+            border-top: 1px solid #34495e;
             color: #7f8c8d;
         }
+        
+        /* Стили для карточек товаров */
         .products-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 40px;  /* Увеличенное расстояние между карточками */
-            padding: 40px;
+            gap: 40px;
+            padding: 20px;
             margin: 0 auto;
             max-width: 1400px;
         }
-
-/* Карточка товара */
+        
         .product-card {
             background: white;
             border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);  /* Более заметная тень */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             overflow: hidden;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
             display: flex;
             flex-direction: column;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            backdrop-filter: blur(0px);
         }
-
+        
         .product-card:hover {
             transform: translateY(-8px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);  /* Усиленная тень при наведении */
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
         }
+        
         .basket-table th,
         .basket-table td {
-            padding: 15px 25px;  /* 👈 Это основное изменение */
+            padding: 15px 25px;
+            vertical-align: middle;
         }
-
-
+        
+        /* Кнопка корзины с бейджем */
+        .cart-badge {
+            position: relative;
+            top: -8px;
+            left: -5px;
+            font-size: 0.7rem;
+        }
     </style>
+    
     {% block extra_css %}{% endblock %}
 </head>
 <body>
+    
+    <!-- Navbar с логотипом, ссылками и кнопками Войти/Выйти -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <!-- Логотип/название магазина -->
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-dice-6"></i>
+                Настольные игры
+            </a>
+            
+            <!-- Кнопка для мобильных устройств -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <!-- Основное меню -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <!-- Ссылка на главную -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'index' %}">
+                            <i class="bi bi-house"></i> Главная
+                        </a>
+                    </li>
+                    
+                    <!-- Ссылка на каталог -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'product_list' %}">
+                            <i class="bi bi-grid"></i> Каталог
+                        </a>
+                    </li>
+                    
+                    <!-- Ссылка на корзину с счетчиком -->
+                    <li class="nav-item">
+                        <a class="nav-link position-relative" href="{% url 'basket' %}">
+                            <i class="bi bi-cart"></i> Корзина
+                            {% if cart_total_items %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ cart_total_items }}
+                            </span>
+                            {% endif %}
+                        </a>
+                    </li>
+                    
+                    <!-- Кнопки Войти/Выйти в зависимости от статуса аутентификации -->
+                    {% if user.is_authenticated %}
+                        <!-- Пользователь авторизован -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-person-circle"></i> {{ user.username }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form method="post" action="{% url 'logout' %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item">
+                                            <i class="bi bi-box-arrow-right"></i> Выйти
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <!-- Пользователь не авторизован -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'login' %}">
+                                <i class="bi bi-box-arrow-in-right"></i> Войти
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'register' %}">
+                                <i class="bi bi-person-plus"></i> Регистрация
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Основной контент -->
     <div class="container">
-        <nav>
-            <a href="/">🏠 Главная</a>
-            <a href="/about/">👤 Об авторе</a>
-            <a href="/shop_info/">🎲 О магазине</a>
-            <a href = "/catalog/"> Товары </a>
-            <a href ="/basket/"> Корзина</a>
-       </nav>
+        <!-- Блок для сообщений -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show mt-3" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
         
-        <div class="content">
+        <!-- Блок основного содержимого -->
+        <div class="main-content">
             {% block content %}
             {% endblock %}
         </div>
-        
-        <footer>
-            <p>&copy; 2026 Магазин настольных игр. Все права защищены.</p>
-        </footer>
     </div>
+    
+    <!-- Футер с информацией о магазине -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5><i class="bi bi-dice-6"></i> Настольные игры</h5>
+                    <p>Лучший выбор настольных игр для всей семьи. У нас вы найдете игры на любой вкус и возраст.</p>
+                </div>
+                <div class="col-md-3">
+                    <h5>Информация</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{% url 'about' %}"><i class="bi bi-person"></i> Об авторе</a></li>
+                        <li><a href="{% url 'shop_info' %}"><i class="bi bi-shop"></i> О магазине</a></li>
+                    
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                   
+                </div>
+                <div class="col-md-2">
+                   
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Магазин настольных игр. Все права защищены.</p>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Блок для дополнительных скриптов -->
+     
+    {% block scripts %}{% endblock %}
 </body>
 </html>

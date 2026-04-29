@@ -80,7 +80,14 @@
                 🗑️ Удалить
             </button>
         </form>
-        
+        <form action="{% url 'checkout' %}" 
+              method="post" 
+              onsubmit="return confirm('оформить заказ {{ element.product.name }} из корзины?')">
+            {% csrf_token %}
+            <button type="submit" class="btn-remove">
+                 оформить заказ
+            </button>
+        </form>
       
     </td>
 </tr>

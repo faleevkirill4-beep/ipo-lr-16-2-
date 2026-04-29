@@ -1,28 +1,104 @@
 {% extends 'shop/base.html' %}
 
+{% block title %}Оформление заказа{% endblock %}
+
 {% block content %}
-<div style="max-width: 500px; margin: 50px auto;">
-    <h2>Оформление заказа</h2>
+<div class="container">
+    <h1 class="mb-4">Оформление заказа</h1>
     
-    <form method="post">
-        {% csrf_token %}
+    <div class="row">
+        <!-- Форма для ввода данных -->
+        <div class="col-md-7">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-pencil-square"></i> Данные для доставки</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'checkout' %}">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">📞 Телефон *</label>
+                            <input type="tel" class="form-control" id="phone" name="phone" 
+                                   placeholder="+7 (999) 123-45-67" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="email" class="form-label">📧 Email *</label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   value="{{ request.user.email }}" required>
+                            <small class="text-muted">Чек будет отправлен на этот адрес</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="address" class="form-label">📍 Адрес доставки *</label>
+                            <textarea class="form-control" id="address" name="address" 
+                                      rows="3" placeholder="Город, улица, дом, квартира" required></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="comment" class="form-label">💬 Комментарий к заказу</label>
+                            <textarea class="form-control" id="comment" name="comment" 
+                                      rows="2" placeholder="Пожелания по доставке, удобное время..."></textarea>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg" 
+                                    onclick="return confirm('Оформить заказ? После подтверждения корзина будет очищена.')">
+                                <i class="bi bi-check-circle"></i> Подтвердить заказ
+                            </button>
+                            <a href="{% url 'basket' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Вернуться в корзину
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
         
-        <p>
-            <label>Email для чека:</label>
-            <input type="email" name="email" value="{{ request.user.email }}" required>
-        </p>
-        
-        <p>
-            <label>Телефон:</label>
-            <input type="tel" name="phone" required>
-        </p>
-        
-        <p>
-            <label>Адрес доставки:</label>
-            <textarea name="address" required></textarea>
-        </p>
-        
-        <button type="submit">Подтвердить заказ</button>
-    </form>
+        <!-- Информация о заказе -->
+        <div class="col-md-5">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="bi bi-cart"></i> Ваш заказ</h5>
+                </div>
+                <div class="card-body">
+                    {% if items %}
+                        <div class="order-items mb-3">
+                            {% for item in items %}
+                                <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                    <div>
+                                        <strong>{{ item.product.name }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ item.count }} шт.</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="fw-bold">{{ item.product.price|floatformat:2|add:item.count }} ₽</span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="order-total pt-3 border-top">
+                            <div class="d-flex justify-content-between">
+                                <strong>Итого:</strong>
+                                <strong class="text-primary fs-5">{{ total }} ₽</strong>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info mt-3 mb-0">
+                            <i class="bi bi-info-circle"></i>
+                            <small>После подтверждения заказа вы получите чек на указанный email.</small>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning text-center mb-0">
+                            <i class="bi bi-cart-x"></i>
+                            <p class="mb-0">Корзина пуста</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

@@ -3,17 +3,140 @@
 {% block title %}Главная - Магазин настольных игр{% endblock %}
 
 {% block content %}
-    <h1>Добро пожаловать в мир настольных игр!</h1>
+    <!-- 1. Hero-секция: баннер с названием магазина, описанием и кнопкой -->
+    <div class="hero-section bg-primary text-white text-center py-5 mb-5 rounded">
+        <div class="container">
+            <h1 class="display-3 fw-bold">🎲 Мир настольных игр</h1>
+            <p class="lead mt-3">Лучшие настольные игры для всей семьи! От классики до новинок — у нас есть всё для уютных вечеров и шумных компаний.</p>
+            <a href="{% url 'product_list' %}" class="btn btn-light btn-lg mt-3">
+                🎯 Перейти в каталог
+            </a>
+        </div>
+    </div>
+
+    <!-- 2. Секция популярных товаров (6 последних добавленных) -->
+    <div class="popular-products mb-5">
+        <h2 class="text-center mb-4">🔥 Популярные товары</h2>
+        {% if popular_products %}
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% for product in popular_products %}
+                    <div class="col">
+                        <div class="card h-100 shadow-sm product-card">
+                            {% if product.image %}
+                                <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
+                            {% else %}
+                                <div class="card-img-top bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">
+                                    <i class="bi bi-image" style="font-size: 48px;"></i>
+                                </div>
+                            {% endif %}
+                            <div class="card-body">
+                                <h5 class="card-title">{{ product.name }}</h5>
+                                <p class="card-text text-muted">{{ product.description|truncatewords:15 }}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="h5 text-primary">{{ product.price }} BYN</span>
+                                    <a href="{% url 'product_detail' product.id %}" class="btn btn-outline-primary btn-sm">
+                                        Подробнее
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-transparent border-0 pb-3">
+                                <a href="{% url 'add' product.id %}" class="btn btn-primary w-100">
+                                    🛒 В корзину
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-4">
+                <p class="text-muted">Товары пока не добавлены.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- 3. Секция категорий -->
+    <div class="categories-section mb-5">
+        <h2 class="text-center mb-4">📂 Категории товаров</h2>
+        {% if categories %}
+            <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
+                {% for category in categories %}
+                    <div class="col">
+                        <a href="{% url 'product_list' %}?category={{ category.id }}" class="text-decoration-none">
+                            <div class="card text-center category-card h-100 shadow-sm">
+                                <div class="card-body">
+                                    <i class="bi bi-grid" style="font-size: 32px;"></i>
+                                    <h5 class="card-title mt-2">{{ category.name }}</h5>
+                                    <p class="card-text small text-muted">{{ category.products.count }} товаров</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-4">
+                <p class="text-muted">Категории еще не добавлены.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Дополнительный блок "Почему выбирают нас" -->
+    <div class="features-section bg-light py-4 rounded">
+        <h2 class="text-center mb-4">✏️ Почему выбирают нас?</h2>
+        <div class="row text-center">
+            <div class="col-md-3 mb-3">
+                <i class="bi bi-collection" style="font-size: 38px;"></i>
+                <h5 class="mt-2">Широкий ассортимент</h5>
+                <p>Более 500 игр на любой вкус</p>
+            </div>
+            <div class="col-md-3 mb-3">
+                <i class="bi bi-dice" style="font-size: 38px;"></i>
+                <h5 class="mt-2">Аксессуары</h5>
+                <p>Протекторы, кубики, маски</p>
+            </div>
+            <div class="col-md-3 mb-3">
+                <i class="bi bi-rocket" style="font-size: 38px;"></i>
+                <h5 class="mt-2">Быстрая доставка</h5>
+                <p>Доставим за 1-3 дня</p>
+            </div>
+            <div class="col-md-3 mb-3">
+                <i class="bi bi-chat-dots" style="font-size: 38px;"></i>
+                <h5 class="mt-2">Консультации</h5>
+                <p>Поможем выбрать игру</p>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Дополнительные стили для главной страницы */
+    .hero-section {
+        background: linear-gradient(135deg, #2c3e50 0%, #1a252f 100%);
+    }
     
-    <p>Здесь вы найдете все для уютных вечеров: от классических игр до редких коллекционных изданий и аксессуаров.</p>
+    .product-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
     
-    <h2>Почему выбирают нас?</h2>
-    <ul>
-        <li>🃏 Широкий ассортимент настольных игр</li>
-        <li>🎲 Большой выбор аксессуаров (протекторы, кубики, маски)</li>
-        <li>🚀 Быстрая доставка</li>
-        <li>💬 Консультации опытных игроков</li>
-    </ul>
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
     
-    <p>Используйте навигацию выше, чтобы узнать больше о нашем магазине и авторе проекта.</p>
+    .category-card {
+        transition: transform 0.2s ease;
+        cursor: pointer;
+    }
+    
+    .category-card:hover {
+        transform: translateY(-3px);
+        background-color: #f8f9fa;
+    }
+    
+    .features-section i {
+        color: #2c3e50;
+    }
+</style>
 {% endblock %}

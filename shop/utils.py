@@ -3,16 +3,9 @@ from openpyxl.styles import Font, Alignment
 from io import BytesIO
 from datetime import datetime
 
-def create_excel_receipt(user, items, total_price):
-    """Создание Excel чека
+def create_excel_receipt(user, items, total_price, phone=None, address=None, order_id=None):
+    """Создание Excel чека"""
     
-    Аргументы:
-    - user: объект пользователя Django
-    - items: QuerySet объектов BasketItem
-    - total_price: общая сумма заказа
-    """
-    
-    # Создаем Excel файл
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Чек заказа"
@@ -23,51 +16,79 @@ def create_excel_receipt(user, items, total_price):
     ws['A1'].alignment = Alignment(horizontal='center')
     ws.merge_cells('A1:D1')
     
-    # Информация о заказе
-    ws['A3'] = f'Дата: {datetime.now().strftime("%d.%m.%Y %H:%M")}'
-    ws['A4'] = f'Покупатель: {user.username}'
-    ws['A5'] = f'Email: {user.email}'
+    # Номер заказа
+    if order_id:
+        ws['A3'] = f'Номер заказа: #{order_id}'
+    else:
+        ws['A3'] = f'Номер заказа: {datetime.now().strftime("%Y%m%d%H%M%S")}'
     
-    # Заголовки таблицы
-    ws['A7'] = 'Товар'
-    ws['B7'] = 'Цена'
-    ws['C7'] = 'Кол-во'
-    ws['D7'] = 'Сумма'
+    ws['A4'] = f'Дата: {datetime.now().strftime("%d.%m.%Y %H:%M")}'
+    ws['A5'] = f'Покупатель: {user.get_full_name() or user.username}'
+    ws['A6'] = f'Email: {user.email}'
     
-    for cell in ['A7', 'B7', 'C7', 'D7']:
-        ws[cell].font = Font(bold=True)
-        ws[cell].alignment = Alignment(horizontal='center')
-    
-    # Заполняем товары
-    row = 8
-    for item in items:
-        ws[f'A{row}'] = item.product.name
-        ws[f'B{row}'] = f'{item.product.price}BYN'
-        ws[f'C{row}'] = item.count
-        ws[f'D{row}'] = f'{item.product.price * item.count} BYN'
-        
-        ws[f'B{row}'].alignment = Alignment(horizontal='right')
-        ws[f'C{row}'].alignment = Alignment(horizontal='center')
-        ws[f'D{row}'].alignment = Alignment(horizontal='right')
+    row = 7
+    if phone:
+        ws[f'A{row}'] = f'Телефон: {phone}'
+        row += 1
+    if address:
+        ws[f'A{row}'] = f'Адрес: {address}'
         row += 1
     
-    # Итог
+    # Пустая строка перед таблицей
     row += 1
-    ws[f'C{row}'] = 'ИТОГО:'
-    ws[f'C{row}'].font = Font(bold=True)
-    ws[f'C{row}'].alignment = Alignment(horizontal='right')
+    ws[f'A{row}'] = ''
     
-    ws[f'D{row}'] = f'{total_price} ₽'
-    ws[f'D{row}'].font = Font(bold=True)
-    ws[f'D{row}'].alignment = Alignment(horizontal='right')
+    # Заголовки таблицы
+    row += 1
+    ws[f'A{row}'] = '№'
+    ws[f'B{row}'] = 'Товар'
+    ws[f'C{row}'] = 'Цена'
+    ws[f'D{row}'] = 'Кол-во'
+    ws[f'E{row}'] = 'Сумма'
+    
+    for col in ['A', 'B', 'C', 'D', 'E']:
+        ws[f'{col}{row}'].font = Font(bold=True)
+        ws[f'{col}{row}'].alignment = Alignment(horizontal='center')
+    
+    # Заполняем товары
+    data_row = row + 1
+    for idx, item in enumerate(items, 1):
+        ws[f'A{data_row}'] = idx
+        ws[f'B{data_row}'] = item.product.name
+        ws[f'C{data_row}'] = f'{item.product.price:,.2f} ₽'
+        ws[f'D{data_row}'] = item.count
+        ws[f'E{data_row}'] = f'{item.product.price * item.count:,.2f} ₽'
+        
+        ws[f'A{data_row}'].alignment = Alignment(horizontal='center')
+        ws[f'C{data_row}'].alignment = Alignment(horizontal='right')
+        ws[f'D{data_row}'].alignment = Alignment(horizontal='center')
+        ws[f'E{data_row}'].alignment = Alignment(horizontal='right')
+        data_row += 1
+    
+    # Итог
+    data_row += 1
+    ws[f'D{data_row}'] = 'ИТОГО:'
+    ws[f'D{data_row}'].font = Font(bold=True)
+    ws[f'D{data_row}'].alignment = Alignment(horizontal='right')
+    
+    ws[f'E{data_row}'] = f'{total_price:,.2f} ₽'
+    ws[f'E{data_row}'].font = Font(bold=True)
+    ws[f'E{data_row}'].alignment = Alignment(horizontal='right')
+    
+    # Нижний колонтитул
+    data_row += 2
+    ws[f'A{data_row}'] = 'Спасибо за покупку!'
+    ws[f'A{data_row}'].alignment = Alignment(horizontal='center')
+    ws.merge_cells(f'A{data_row}:E{data_row}')
     
     # Настраиваем ширину колонок
-    ws.column_dimensions['A'].width = 35
-    ws.column_dimensions['B'].width = 12
-    ws.column_dimensions['C'].width = 10
-    ws.column_dimensions['D'].width = 15
+    ws.column_dimensions['A'].width = 6
+    ws.column_dimensions['B'].width = 35
+    ws.column_dimensions['C'].width = 15
+    ws.column_dimensions['D'].width = 10
+    ws.column_dimensions['E'].width = 15
     
-    # Сохраняем в память
+    # Сохраняем
     output = BytesIO()
     wb.save(output)
     output.seek(0)

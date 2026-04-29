@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'shop',
+    'rest_framework',
+     'rest_framework.authtoken',
 ]
 
 MIDDLEWARE = [
@@ -121,7 +123,23 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-LOGIN_URL = '/admin/login/'  # или путь к вашей странице входа
+# Дополнительные директории со статическими файлами
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+
+
+# Куда перенаправлять после успешного входа
+LOGIN_REDIRECT_URL = 'index'  
+
+# Куда перенаправлять после выхода
+LOGOUT_REDIRECT_URL = 'index'
+
+LOGIN_URL = 'login'
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
@@ -134,3 +152,18 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = ''
 EMAIL_HOST_PASSWORD = ''
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# Django REST Framework настройки
+REST_FRAMEWORK = {
+    # Аутентификация
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',  # Для браузера
+        'rest_framework.authentication.BasicAuthentication',    # Для базовой аутентификации
+        'rest_framework.authentication.TokenAuthentication',    # Для токенов API
+    ],
+    
+    # Разрешения - ТОЛЬКО АВТОРИЗОВАННЫЕ ПОЛЬЗОВАТЕЛИ
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',  # Только авторизованные
+    ],
+}

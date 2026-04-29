@@ -1,46 +1,218 @@
 {% extends 'shop/base.html' %}
 
+{% block title %}Каталог товаров{% endblock %}
+
 {% block content %}
-    <h1>Каталог товаров</h1>
+<div class="container-fluid px-0">
+    <h1 class="mb-4">Каталог товаров</h1>
     
     {% if messages %}
-        <div class="messages">
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        </div>
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
     {% endif %}
     
-    {% if products %}
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; padding: 20px;">
-            {% for product in products %}
-                <div style="border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center;">
-                    <h2>{{ product.name }}</h2>
-                    <p>{{ product.description|truncatewords:15 }}</p>
-                    <p style="font-size: 1.5rem; font-weight: bold; color: #e44d26;">{{ product.price }} BYN.</p>
-                    <p>В наличии: {{ product.count }} шт.</p>
-                    
-                    <!-- КНОПКА ДОБАВЛЕНИЯ В КОРЗИНУ -->
-                    {% if product.count > 0 %}
-                        <form action="{% url 'add' product.id %}" method="post" style="margin-top: 10px;">
-                            {% csrf_token %}
-                            <button type="submit" style="background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; width: 100%;">
-                                🛒 Добавить в корзину
-                            </button>
-                        </form>
-                    {% else %}
-                        <button disabled style="background: #ccc; color: #666; border: none; padding: 10px 20px; border-radius: 5px; width: 100%; margin-top: 10px;">
-                            ❌ Нет в наличии
-                        </button>
-                    {% endif %}
+    <div class="row">
+        <!-- 1. Боковая панель фильтров (col-md-3) -->
+        <div class="col-md-3 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-funnel"></i> Фильтры</h5>
                 </div>
-            {% endfor %}
+                <div class="card-body">
+                    <form method="get" action="{% url 'product_list' %}">
+                        <!-- Фильтр по категории -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Категория:</label>
+                            <select name="category" class="form-select">
+                                <option value="">Все категории</option>
+                                {% for category in categories %}
+                                    <option value="{{ category.id }}" {% if request.GET.category|add:"0" == category.id %}selected{% endif %}>
+                                        {{ category.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Фильтр по производителю -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Производитель:</label>
+                            <select name="manufacturer" class="form-select">
+                                <option value="">Все производители</option>
+                                {% for manufacturer in manufacturers %}
+                                    <option value="{{ manufacturer.id }}" {% if request.GET.manufacturer|add:"0" == manufacturer.id %}selected{% endif %}>
+                                        {{ manufacturer.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Поиск по названию -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Поиск:</label>
+                            <input type="text" name="search" class="form-control" 
+                                   placeholder="Поиск товара..." 
+                                   value="{{ request.GET.search|default:'' }}">
+                        </div>
+                        
+                        <!-- Кнопка "Применить фильтры" -->
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-search"></i> Применить фильтры
+                        </button>
+                        
+                        <!-- Сброс фильтров -->
+                        <a href="{% url 'product_list' %}" class="btn btn-secondary w-100 mt-2">
+                            <i class="bi bi-arrow-repeat"></i> Сбросить
+                        </a>
+                    </form>
+                </div>
+            </div>
         </div>
-    {% else %}
-        <p style="color: red; font-size: 20px;">
-            ❌ Товары временно отсутствуют в базе данных!
-        </p>
-    {% endif %}
+        
+        <!-- 2. Сетка товаров (col-md-9) -->
+        <div id = "products-container">
+            <!-- Информация о количестве товаров -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <p class="text-muted">Найдено товаров: {{ page_obj.paginator.count }}</p>
+            </div>
+            
+            {% if products %}
+                <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4">
+                    {% for product in products %}
+                        <div class="col">
+                            <div class="card h-100 shadow-sm product-card">
+                                <!-- Фото товара -->
+                                {% if product.image %}
+                                    <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+                                {% else %}
+                                    <div class="card-img-top bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">
+                                        <i class="bi bi-image" style="font-size: 48px;"></i>
+                                    </div>
+                                {% endif %}
+                                
+                                <div class="card-body">
+                                    <!-- Название товара -->
+                                    <h5 class="card-title">{{ product.name }}</h5>
+                                    <!-- Цена -->
+                                    <p class="card-text text-primary h4">{{ product.price }} ₽</p>
+                                    <!-- Наличие -->
+                                    <p class="card-text small text-muted">
+                                        {% if product.count > 0 %}
+                                            <span class="text-success">✓ В наличии: {{ product.count }} шт.</span>
+                                        {% else %}
+                                            <span class="text-danger">✗ Нет в наличии</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                
+                                <div class="card-footer bg-transparent border-0 pb-3">
+                                    <!-- Кнопка "Подробнее" -->
+                                    <a href="{% url 'product_detail' product.id %}" class="btn btn-outline-primary w-100 mb-2">
+                                        <i class="bi bi-eye"></i> Подробнее
+                                    </a>
+                                    
+                                    <!-- Кнопка добавления в корзину -->
+                                    {% if product.count > 0 %}
+                                        <form action="{% url 'add' product.id %}" method="post">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-primary w-100">
+                                                <i class="bi bi-cart-plus"></i> В корзину
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <button class="btn btn-secondary w-100" disabled>
+                                            <i class="bi bi-cart-x"></i> Нет в наличии
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Пагинация (Bootstrap) -->
+                {% if page_obj.has_other_pages %}
+                    <nav aria-label="Пагинация" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            <!-- Предыдущая страница -->
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                        &laquo; Назад
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">&laquo; Назад</span>
+                                </li>
+                            {% endif %}
+                            
+                            <!-- Номера страниц -->
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                            {{ num }}
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            <!-- Следующая страница -->
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                        Вперед &raquo;
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">Вперед &raquo;</span>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+                
+            {% else %}
+                <div class="alert alert-info text-center">
+                    <i class="bi bi-info-circle"></i> Товары не найдены. Попробуйте изменить параметры фильтрации.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .product-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
+    
+    .card-img-top {
+        background-color: #f8f9fa;
+    }
+    
+    .pagination .page-link {
+        color: #2c3e50;
+    }
+    
+    .pagination .active .page-link {
+        background-color: #2c3e50;
+        border-color: #2c3e50;
+    }
+</style>
 {% endblock %}

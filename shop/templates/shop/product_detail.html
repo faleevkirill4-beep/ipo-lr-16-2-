@@ -1,34 +1,201 @@
-{% extends 'shop/base.html'%}
+{% extends 'shop/base.html' %}
 
-{% block title %}{{ product.name }}{% endblock %}
+{% block title %}{{ product.name }} - Магазин настольных игр{% endblock %}
 
 {% block content %}
 <div class="container">
-    <div class="product-detail">
-        <h1>{{ product.name }}</h1>
-        <p class="text-muted">Артикул: {{ product.id }}</p>
-        
-        {% if product.price %}
-        <div class="price-tag">
-            <strong>Цена:</strong> {{ product.price }} ₽
+    <!-- 1. Хлебные крошки (breadcrumbs) -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'index' %}">Главная</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'product_list' %}">Каталог</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                {{ product.name }}
+            </li>
+        </ol>
+    </nav>
+    
+    <!-- 2. Основной блок (две колонки) -->
+    <div class="row">
+        <!-- Левая колонка (col-md-6): фото товара -->
+        <div class="col-md-6 mb-4">
+            <div class="product-image-container text-center bg-light rounded p-4">
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="img-fluid rounded" style="max-height: 400px; width: auto;">
+                {% else %}
+                    <div class="bg-secondary text-white d-flex align-items-center justify-content-center rounded" style="height: 400px;">
+                        <i class="bi bi-image" style="font-size: 80px;"></i>
+                    </div>
+                {% endif %}
+            </div>
         </div>
-        {% endif %}
         
-        {% if product.description %}
-        <div class="description">
-            <h3>Описание:</h3>
-            <p>{{ product.description|linebreaks }}</p>
-        </div>
-        {% endif %}
-        
-        <div class="actions">
-            <button class="btn btn-primary" onclick="alert('Товар добавлен в корзину')">
-                Добавить в корзину
-            </button>
-            <a href="{% url 'product_list' %}" class="btn btn-secondary">
-                Назад в каталог
-            </a>
+        <!-- Правая колонка (col-md-6): информация о товаре -->
+        <div class="col-md-6">
+            <h1 class="mb-3">{{ product.name }}</h1>
+            
+            <!-- Производитель -->
+            {% if product.manufacturer %}
+                <p class="text-muted mb-2">
+                    <i class="bi bi-building"></i> Производитель: 
+                    <strong>{{ product.manufacturer.name }}</strong>
+                </p>
+            {% endif %}
+            
+            <!-- Категория -->
+            {% if product.category %}
+                <p class="text-muted mb-3">
+                    <i class="bi bi-tag"></i> Категория: 
+                    <strong>{{ product.category.name }}</strong>
+                </p>
+            {% endif %}
+            
+            <!-- Описание -->
+            <div class="description mb-4">
+                <h5>Описание:</h5>
+                <p class="text-muted">{{ product.description|linebreaks }}</p>
+            </div>
+            
+            <!-- Цена -->
+            <div class="price mb-3">
+                <h2 class="text-primary">
+                    {{ product.price }} ₽
+                </h2>
+            </div>
+            
+            <!-- Количество на складе -->
+            <div class="stock mb-4">
+                {% if product.count > 0 %}
+                    <p class="text-success">
+                        <i class="bi bi-check-circle"></i> В наличии: 
+                        <strong>{{ product.count }} шт.</strong>
+                    </p>
+                {% else %}
+                    <p class="text-danger">
+                        <i class="bi bi-x-circle"></i> Нет в наличии
+                    </p>
+                {% endif %}
+            </div>
+            
+            <!-- Кнопка "Добавить в корзину" -->
+            {% if product.count > 0 %}
+                <form action="{% url 'add' product.id %}" method="post" class="d-flex gap-3 align-items-center">
+                    {% csrf_token %}
+                    <div class="quantity-selector">
+                        <label for="quantity" class="form-label me-2">Количество:</label>
+                        <input type="number" name="quantity" id="quantity" value="1" 
+                               min="1" max="{{ product.count }}" class="form-control" 
+                               style="width: 80px; display: inline-block;">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-cart-plus"></i> Добавить в корзину
+                    </button>
+                </form>
+            {% else %}
+                <button class="btn btn-secondary btn-lg" disabled>
+                    <i class="bi bi-cart-x"></i> Нет в наличии
+                </button>
+            {% endif %}
+            
+            <!-- Дополнительная информация -->
+            <div class="additional-info mt-4 pt-3 border-top">
+                <p class="small text-muted">
+                    <i class="bi bi-info-circle"></i> 
+                    Артикул: #{{ product.id }}
+                </p>
+            </div>
         </div>
     </div>
+    
+    <!-- Блок рекомендаций (похожие товары) - опционально -->
+    {% if similar_products %}
+        <div class="similar-products mt-5">
+            <h3 class="mb-4">Похожие товары</h3>
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-4">
+                {% for similar in similar_products %}
+                    <div class="col">
+                        <div class="card h-100 shadow-sm">
+                            {% if similar.image %}
+                                <img src="{{ similar.image.url }}" class="card-img-top" alt="{{ similar.name }}" style="height: 150px; object-fit: cover;">
+                            {% else %}
+                                <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 150px;">
+                                    <i class="bi bi-image"></i>
+                                </div>
+                            {% endif %}
+                            <div class="card-body">
+                                <h6 class="card-title">{{ similar.name }}</h6>
+                                <p class="card-text text-primary fw-bold">{{ similar.price }} ₽</p>
+                            </div>
+                            <div class="card-footer bg-transparent border-0 pb-3">
+                                <a href="{% url 'product_detail' similar.id %}" class="btn btn-sm btn-outline-primary w-100">
+                                    Подробнее
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .breadcrumb {
+        background-color: transparent;
+        padding: 0;
+    }
+    
+    .breadcrumb-item a {
+        text-decoration: none;
+        color: #2c3e50;
+    }
+    
+    .breadcrumb-item a:hover {
+        text-decoration: underline;
+    }
+    
+    .product-image-container {
+        background-color: #f8f9fa;
+        border: 1px solid #eee;
+    }
+    
+    .price {
+        font-size: 1.5rem;
+    }
+    
+    .quantity-selector {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .quantity-selector input {
+        text-align: center;
+    }
+    
+    .btn-primary {
+        background-color: #2c3e50;
+        border-color: #2c3e50;
+    }
+    
+    .btn-primary:hover {
+        background-color: #1a252f;
+        border-color: #1a252f;
+    }
+    
+    .similar-products .card {
+        transition: transform 0.2s ease;
+    }
+    
+    .similar-products .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+</style>
 {% endblock %}
